@@ -1,0 +1,227 @@
+
+\documentclass[12pt]{report}
+\usepackage{cuthesis}
+\usepackage{amsmath}
+\usepackage[font=small,format=plain,labelfont=bf,up,textfont=up]{caption}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{verbatim}
+\usepackage[toc, page]{appendix}
+%\usepackage{natbib}
+%\citestyle{nature}
+
+\author{Guangfu Shi}
+\title{Efficient Ray-Tracing Techniques Using GPU}
+\degree{Master of Computer Science}
+\dept{Computer Science}       % default is Comp.Sci.
+\cosupervisor                   % if you also have a co-supervisor
+
+%% New commands definitions
+\newcommand{\myalgblankline} {\vspace{8pt}}
+\newcommand{\mytriangle} {\(t\)}
+\newcommand{\mytriangles} {\(T\)}
+\newcommand{\mysplitplanes} {\(P\)}
+\newcommand{\mysplitplanescan} {\(\hat{P}_{candidates}\)}
+\newcommand{\mysplitplane} {\(p\)}
+\newcommand{\mysplitplanek} {\(p_{k}\)}
+\newcommand{\mysplitplanep} {\(p_{\xi}\)}
+\newcommand{\mysplitplanea} {\(p_{0}\)}
+\newcommand{\mysplitplaneb} {\(p_{1}\)}
+\newcommand{\mysplitplanec} {\(p_{2}\)}
+\newcommand{\mysplitplanen}[1] {\(p_#1\)}
+\newcommand{\mybestsplitplane}                  {\(\hat{p}\)}
+\newcommand{\mybestsplitplanek}                 {\(\hat{p}_{k}\)}
+\newcommand{\mybestsplitplanep}                 {\(\hat{p}_{\xi}\)}
+\newcommand{\mysplitplanepos} {\(\xi\)}
+\newcommand{\myvoxel} {\(V\)}
+\newcommand{\myaabb} {\(B\)}
+\newcommand{\myaabbmin} {\(B_{min}\)}
+\newcommand{\myaabbmax} {\(B_{max}\)} 
+\newcommand{\myaabbmink} {\(B_{min,k}\)}
+\newcommand{\myaabbmaxk} {\(B_{max,k}\)}
+\newcommand{\myaabbside} {\(s\)}
+\newcommand{\myleftchildbox} {\(V_{L}\)}
+\newcommand{\myrightchildbox} {\(V_{R}\)}
+
+\newcommand{\mynumtri} {\(N\)}
+\newcommand{\mynumtrileft} {\(N_{L}\)}
+\newcommand{\mynumtriright} {\(N_{R}\)}
+\newcommand{\mynumtrileftk}[1] {\(N_{L,#1}\)}
+\newcommand{\mynumtrirightk}[1] {\(N_{R,#1}\)}
+
+\newcommand{\mykt} {\(K_{T}\)}
+\newcommand{\myki} {\(K_{I}\)}
+\newcommand{\mysapleft} {\(P_{L}\)}
+\newcommand{\mysapright} {\(P_{R}\)}
+\newcommand{\mysahcost} {\(C_{V}(p)\)} 
+\newcommand{\mycostp} {\(C_{p}\)}
+\newcommand{\mycostmin} {\(\hat{C}_{min}\)}
+\newcommand{\mysahlambda} {\(\lambda(p)\)}
+\newcommand{\mydimension} {k}
+\newcommand{\myinfty} {\(\infty\)}
+\newcommand{\myemptyset} {\(\emptyset\)}
+\newcommand{\mytrilist} {\(T\)}
+\newcommand{\mylefttrilist} {\(T_{L}\)}
+\newcommand{\myrighttrilist} {\(T_{R}\)}
+\newcommand{\mylefttrilistbest} {\(T_{l}\)}
+\newcommand{\myrighttrilistbest} {\(T_{r}\)}
+\newcommand{\mynumtrilist}[1] {\(\lvert\)#1\(\rvert\)}
+
+% number of start, end triangles
+\newcommand{\mynumtristartp}            {\(p^{+}\)}
+\newcommand{\mynumtriendp}              {\(p^{-}\)}
+\newcommand{\mynumtristartip}[1]        {\(p_{#1}^{+}\)}
+\newcommand{\mynumtriendip}[1]          {\(p_{#1}^{-}\)}
+
+% event data structure field, triangle, position and event type
+\newcommand{\myevent}                   {\(e\)}
+\newcommand{\myeventt}                  {\(e_{t}\)}
+\newcommand{\myeventp}                  {\(e_{\xi}\)}
+\newcommand{\myeventtype}               {\(e_{type}\)}
+\newcommand{\myeventk}                  {\(e_{k}\)} 
+\newcommand{\myeventlist}               {\(E\)}
+\newcommand{\myeventlistleft}           {\(E_{L}\)}
+\newcommand{\myeventlistright}          {\(E_{R}\)}
+\newcommand{\myeventlistleftk}[1]       {\(E_{L}\)[#1]}
+\newcommand{\myeventlistrightk}[1]      {\(E_{R}\)[#1]}
+\newcommand{\myeventlistpi}[1]          {\(E_{p}\)[#1]}
+\newcommand{\myeventlistppi}[1]         {\(E_{\xi}\)[#1]}
+\newcommand{\myeventlistki}[1]          {\(E_{k}\)[#1]}
+\newcommand{\myeventlistpki}[1]         {\(E_{p,k}\)[#1]}
+\newcommand{\myeventlistti}[1]          {\(E_{type}[#1]\)}
+\newcommand{\myeventlistk}[1]           {\(E_{#1}\)}
+\newcommand{\mynumeventlist}            {\(E_{num}\)}
+\newcommand{\myeventtypeend}            {\(-\)}
+\newcommand{\myeventtypestart}          {\(+\)}
+
+\newcommand{\mytriflagsarray}[1]        {\(flags\)[#1]} 
+\newcommand{\mytriflagleft}             {\(LeftFlagBit\)}         
+\newcommand{\mytriflagright}            {\(RightFlagBit\)}
+
+\newcommand{\mynode}                    {\(n\)}
+%\newcommnad{\mytrichuk}                 {\(k\)}
+
+
+% Macros for algorithm complexity
+\newcommand{\mycomplexityconst}         {\(O(1)\)}
+\newcommand{\mycomplexityn}             {\(O(N)\)}
+\newcommand{\mycomplexitysqrtn}         {\(O(N^2)\)}
+\newcommand{\mycomplexitynlogn}         {\(O(N\log{N})\)}
+
+% Macros for algorithms descriptions
+\newcommand{\myfunc}                    {\textbf{function} }
+
+% Useful Macros
+\newcommand{\myopand}                   {\(\wedge\)}
+\newcommand{\myopless}                  {\(<\)}
+\newcommand{\myopgreater}               {\(>\)}
+\newcommand{\myopin}                    {\(\in\)}
+
+\newcommand{\mynaive}                   {na\"{\i}ve}
+\newcommand{\myNaive}                   {Na\"{\i}ve}
+
+% Source Code Formatting
+\lstset{
+         %basicstyle=\footnotesize\ttfamily, % Standardschrift
+	 basicstyle=\small\ttfamily,
+         %numbers=left,               % Ort der Zeilennummern
+         numberstyle=\tiny,          % Stil der Zeilennummern
+         %stepnumber=2,               % Abstand zwischen den Zeilennummern
+         numbersep=5pt,              % Abstand der Nummern zum Text
+         tabsize=2,                  % Groesse von Tabs
+         extendedchars=true,         %
+         breaklines=true,            % Zeilen werden Umgebrochen
+         keywordstyle=\color{red},
+	 %frame=t|b,         
+ %        keywordstyle=[1]\textbf,    % Stil der Keywords
+ %        keywordstyle=[2]\textbf,    %
+ %        keywordstyle=[3]\textbf,    %
+ %        keywordstyle=[4]\textbf,   \sqrt{\sqrt{}} %
+         stringstyle=\color{white}\ttfamily, % Farbe der String
+         showspaces=false,           % Leerzeichen anzeigen
+         showtabs=false,             % Tabs anzeigen ?
+         xleftmargin=17pt,
+         framexleftmargin=17pt,
+         framexrightmargin=5pt,
+         framexbottommargin=4pt,
+         %backgroundcolor=\color{lightgray},
+         showstringspaces=false      % Leerzeichen in Strings anzeigen ? 
+   	 captionpos=b
+ } 
+
+
+%---- Set figures path ----
+
+% For Windows
+%\graphicspath{{C:/Users/lenovo/thesis/working/thesis/graphics/}}
+
+% For Mac
+%\graphicspath{{/Users/steveca/thesis/working/thesis/graphics/}}
+
+% For Linux 
+\graphicspath{{/home/stevegocoding/thesis/working/thesis/graphics/}}
+
+\begin{document}
+
+\begin{abstract}
+  Text of abstract.  
+\end{abstract}
+
+\begin{acknowledgments}
+  Text of acknowledgments.
+\end{acknowledgments}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Body of Thesis goes here.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set the page numbering style
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%------------------------
+% Chapter 1 : Introduction
+\include{ch1}
+%------------------------
+
+%-------------------------
+% Chapter 2: Background
+\include{ch2}
+%-------------------------
+
+%-------------------------
+% Chapter 3: Ray-Tracing with KD-Tree
+\include{ch3}
+%-------------------------
+
+%-------------------------
+% Chapter 4: Ray-Tracing with GPU
+%\include{ch4}
+%-------------------------
+
+%-------------------------
+% Chapter 5: Implementation and Result 
+\include{ch5}
+%-------------------------
+
+%-------------------------
+% Chapter 6: Conclusion
+\include{ch6}
+%-------------------------
+
+%-------------------------
+% Appendix 
+\include{appendix}
+%-------------------------
+
+%\bibliography{C:/Users/lenovo/thesis/working/thesis/bib/refdb}  			%place your .bib files here
+\bibliographystyle{ieeetr}               %the bibliography style to use
+\bibliography{refdb}
+
+\end{document}
+

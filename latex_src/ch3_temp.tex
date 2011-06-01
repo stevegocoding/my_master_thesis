@@ -1,0 +1,318 @@
+\emph{Spatial Median}: This is a \mynaive approach to pick the split plane to devide the current node. In kd-tree construction the split plane always splits the bounding box into two halves. This approach leads to balanced kd-tree, it provides a sorted index system for spatial cells which is only helpful to find out in which leaf node a certain point resides efficiently, however, unlike a general binary search, the goal of kd-tree traversal is to not only quickly locate the leaf node which contains the primitives but also query the closest hit point within the leaf node, therefore the geometric primitives information has to be taken into account. Picking split planes in the middle of the bounding box often result in leaf nodes contains lots of geometry even none of them are not hit by the ray, while the intersection test between the ray and all the geometry in this leaf node still has to be performed when the ray reaches the leaf node. As shown in the figure \ref{fig:kd-tree_subdivide_spatial_mid}, the stroked lines represent the split planes which are always positioned in the middle of current bounding box, the shape filled in colour is a geometric object in the scene. In several leaf nodes intersected by the ray, even though the geometry is far away from the ray the intersection tests against the ray have to be performed.
+
+\emph{Cost Model}: To minimize these redundant intersections tests presented above, some information about the distribution of geometry has to be somehow encoded into the kd-tree built from a certain scene to provide heuristic information for the ray tracer in kd-tree traversal stage. The goal of this approach is to pick the optimal split plane to maximize the space of the leaf node which contains little geometry and minimize the space that contains more geometry. As shown in the figure \ref{}<++>, the geometry has been isolated into with one leaf node, and rest leaves contains few. When the ray is passing through the scene, all the leaf nodes it hits are empty nodes thus there the no longer redundant intersection tests since the ray is actually far away from the geometry.  
+
+% assumptions go here
+
+1. The rays are uniformly distributed, infinite lines.
+
+2. The cost of one traversal step and of one ray-geometry intersection are known.
+
+3. The cost of intersecting \(N\) geometric objects for a ray is linear in the number of objects.
+
+Suppose a kd-tree is going to be built from a scene, before any subdivision, the root node is actually a large leaf node that contains all the geometric objects in the scene, then all the geometric objects referenced by the root node have to be tested for intersection with a ray. Let \( C_{IT}(i) \) denote the cost of the ray-object intersection test for \(i\)-th geometric object, thus \( \hat{C}_{V^{E}} \), the cost of such an leaf node before subdivision \( V^{E} \) for a ray shooting query can be computed by
+
+\begin{equation} 
+    \label{eg:CostLeafNode}
+    \hat{C}_{V^{E}} = \sum_{i=1}^{n} C_{IT}(i)
+\end{equation}
+
+%% @TODO : add reference to this figure
+\begin{figure}[htp] 
+    \centering 
+    \fbox{\includegraphics[width=\linewidth]{fig_spatial_median.pdf}} 
+    \label{fig:SpatialMedianSubdivision} 
+    \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+    \caption[The scene with the spatial median subdivision]{\emph{ The scene with the spatial median subdivision}}
+\end{figure}
+
+When a split plane \( p \) is picked, the root node will be replaced by a new tree structure - the interior node \( V^{G} \) with two leaves \(V^{E}_{L} \) and \( V^{E}_{R} \). Consider the cost of this one step of subdivision, the estimated cost of the new tree structure \( \hat{C}_{V^{E}} \) is given as the sum of three terms - \( \hat{C}_{TS} \), \( \hat{C}_{L} \) and \( \hat{C}_{R} \). The term \( \hat{C}_{TS} \) is the estimated cost of traversing an interior node of the kd-tree, it is actually a known constant that represents the traversing cost such as accessing the reference of child nodes, but it does not incorporate any ray-object intersection tests. The term \( \hat{C}_{L} \) and \( \hat{C}_{R} \) are the costs of visiting the left and right children, they should include a factor with the conditional probability that a ray hits the bounding box of leaf nodes \( V^{E}_{L} \) or  \( V^{E}_{R} \) when it visits the parent node \( V^{G} \). The estimated cost \( \hat{C}_{V^{G}} \) of the interior node \( V \) for a given split plane \( p \) can be expressed as follows: 
+
+\begin{equation} 
+    \label{eq:CostOneStep}
+    \hat{C}_{V^{G}}(p) = \hat{C}_{TS} + p_{L} \cdot \hat{C}_{L} + p_{R} \cdot \hat{C}_{R} 
+\end{equation}
+
+Where \( \hat{C}_{TS} \) is the estimated traversal cost of interior node \( V^{G} \), where \( p_{L}\), \(p_{R}\) is the probability of a ray intersecting the left or right child node respectively. The\( C_{L} \) and \(C_{R}\) is the estimated cost of the left and right subtree respectively. Before next step of subdivision, the newly generated child nodes will be considered as leaf nodes, let \( N_{L} \) and \( N_{R} \) denote the number of primitives left and right node contained, the estimated cost can be computed by the equation \ref{eq:CostLeafNode}, \( \hat{C}_{L} =  \sum_{i=1}^{N_{L}} C_{IT}(i) \) and \( \hat{C}_{R} =  \sum_{i=1}^{N_{R}} C_{IT}(i) \).  
+
+\paragraph{Geometric Probability} 
+Let \( X \) and \( Y \) denote two spatial regions of convex shape, and \( Y \) is contained by \( X \), \( Y \subset X \), we want to express the conditional probability  \( p_{Y|X}  \) that an arbitrary ray intersects the spatial region of \( Y \) assuming it also intersects the spatial region \( X \), under the assumption that the rays are uniformly distributed. The situation can be depicted in 
+
+%% @TODO : add reference to this figure
+\begin{figure}[htp] 
+    \centering 
+    \fbox{\includegraphics[width=\linewidth]{fig_geometric_probability.pdf}} 
+    \label{fig:GeometricProbability} 
+    \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+    \caption[Geometric Probability]{\emph{An arbitrary ray hits a spatial region X which contains another spatial region Y}}
+\end{figure} 
+
+Let \( SA(V) \) denote the surface area of a spatial region \( V \), According to the geometric probability theory \cite{}, this conditional probability can be computed by the proportional to the surface area of the convex spatial region \( Y \) divided by the surface area of the convex spatial region \( X \): 
+
+\begin{equation} 
+    \label{eq:GeometricProbability}
+    p_{Y|X} = \frac{SA(Y)}{SA(X)}
+\end{equation}
+
+\paragraph{}
+Thus the equation \ref{eq:CostOneStep} can be expanded into: 
+
+\begin{equation} 
+    \label{eq:CostOneStepEx}
+    \hat{C}_{V^{G}}(p) = \hat{C}_{TS} + \frac{SA(V^{E}_{L})}{SA(V^{G})} \cdot \hat{C}_{L} + \frac{SA(V^{E}_{R})}{SA(V^{G})} \cdot \hat{C}_{R}
+\end{equation}
+
+Using the equation \ref{eq:CostLeafNode}, equation \ref{eq:CostOneStepEx} can be further expanded into:
+
+\begin{equation} 
+    \label{eq:CostOneStepEx1}
+    \hat{C}_{V^{G}}(p) = \hat{C}_{TS} + \frac{SA(V^{E}_{L})}{SA(V^{G})} \dot \sum_{i=1}^{N_{L}} C_{IT}(i) + \frac{SA(V^{E}_{R})}{SA(V^{G})} \dot \sum_{i=1}^{N_{R}} C_{IT}(i)
+\end{equation}
+
+This is the function that computes the cost of one subdivision step in the construction of kd-tree, it is also know SAH function. To achieve better performance for a ray tracer, the SAH function has to be minimized. However, as the number of possible trees rapidly grows with the complexity of the scene, it is infeasible to get the globally minimized SAH cost for the entire scene. Instead, we use a local greedy approximation, as the equation \ref{eq:CostOneStepEx1} shows. 
+
+\paragraph{Position of a Split Plane}
+As described above, we have defined a cost estimation procedure for all possible split position of the split planes for all its possible orientations, among all the split candidates we want to select the split position which yields the minimum SAH cost. As there are infinitely many potential planes, how to determine the splits candidates to choose from needs to be discussed in further detail. The SAH cost estimation function is a continuous, piecewise linear function with respect to the split plane positions \( p \) along a certain axis, for any pair of planes ( \( p_{0}, p_{1} \) ), between which \( N_{L} \) and \( N_{R} \) do not change, the SAH cost function for split plane \( p \), \( \hat{C}(p) \), is linear in the coordinates of the split plane along the current axis, thus the minima will only occur at those points where the slope of the cost function changes, corresponding to the split position that changes the \( N_{L} \) and \( N_{R} \). As shown in the figure \ref{fig:SplitPositionsCost}.
+
+%% @TODO : add reference to this figure
+\begin{figure}[htp] 
+    \centering 
+    \fbox{\includegraphics[width=\linewidth]{fig_split_positions_cost.pdf}} 
+    \label{fig:SplitPositionsCost} 
+    \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+    \caption[SAH Cost Values of Split Positions]{\emph{The value of the SAH cost function for four objects along the axis has its minima at the positions where \( N_{L} \) and \( N_{R} \) change.}}
+\end{figure}
+
+In the figure \ref{fig:SplitPositionsCost}, the rectangle represents the 2-D view of the spatial voxel of the node being subdivided, 4 ovals are contained in this voxel and their boundary's position are labeled as the splits candidates. The graph shows how the SAH cost changes between the interval of the split planes. We can see the discontinuity points of the cost function corresponding to the boundary of the ovals. As the number of the ovals for child nodes \( N_{L} \) and \( N_{R} \) remains constant between two adjacent ovals' boundary positions, the cost functions is linear in respect to position of the split planes. Thus the minimal SAH cost can be found just at the position corresponding to the ovals' boundary. Though using the 6 planes defining the geometric object's bounding box as split candidates is easy to code and fast to build, it also suffers inaccuracy. When a split candidate is picked, in order to compute the SAH function cost, an important step is to determine the number of the objects in the left and right side of the split plane \( N_{L} \) and \( N_{R} \). A \mynaive way to achieve this is to perform an overlap test between every geometric objects and the spatial voxels of the newly generated left and right child nodes, simply using the bounding boxes as the proxy for the objects. However, this approach may sort the object to a voxel which the object does not overlap with. Consider the situation shown in the figure \ref{}<++>      
+
+\begin{figure}[htp] 
+    \centering 
+    \fbox{\includegraphics[width=\linewidth]{fig_inaccurate_overlap.pdf}} 
+    \label{fig:InaccurateOverlap} 
+    \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+    \caption[Inaccurate overlap between object and node]{\emph{Overlap test using object's bounding box may result in reference to the object that does not intersect with the node.}}
+\end{figure}
+
+This is a potential performance hit for the ray tracer, since the object will be tested against the ray even though it should not when the ray hits the leaf node. This inefficiency leads  to an idea of ``perfect'' split candidates which are, instead of the planes of objects' bounding boxes, but the bounding boxes of the clipped objects.        
+
+\paragraph{Termination Criteria}
+The SAH cost estimation provides us with a guide on positioning the split plane in the interior node, but it does not define the scheme of whether to decide terminating the subdividing the node and declare it as a leaf node, or proceed the subdividing further. Consider one step of subdivision, first of all, an obvious case in which the current node is not going to subdivided is that no objects are associated to this node. Secondly, if the current node does not benefit from splitting with even the best split plane, in other words, the cost of subdivided interior node with the best split plane \( p \), \(\hat{C}_{V^{G}}(p) \) is more costly than not splitting at all, then the splitting should be terminated, this approach is also known as \emph{ Automatic Termination Criteria }. Finally, besides using cost-based termination criteria, a pre-defined maximum depths are also useful to bound the memory usage. 
+
+%% TODO; give the full algorithm of kd-tree construction using SAH 
+
+\section{Construction of SAH-Based KD-Tree}
+In the previous sections, we have defined the surface area heuristic model to build the kd-tree, including the definition of the cost estimation model, how to determine the split candidates, how to choose the best split plane greedily, and the termination criteria. In this section, we will begin with a \mynaive SAH-based kd-tree construction algorithm, then summarize the state-of-the-art single-thread algorithm of building the SAH-based the kd-tree and analyze its performance. All the kd-tree construction algorithms follow the same essential recursive scheme shown in the algorithm \ref{algo:KDBuild}, the difference between the construction algorithms is the subdividing procedure which will be recursively called, including selecting the split plane and sorting the primitives into left and right child nodes. There are a few assumptions we need to make. Firstly, From this section, we will use triangles only as the geometric primitives. Secondly, to simplify the analysis of the algorithm, we assume that a list of \(N\) triangles is going to be evenly subdivided into two lists of roughly same size \(\frac{N}{2}\), and the subdivision will not terminated until \(N\) equals to 1.    
+
+\subsection{ \myNaive Split Plane Selection }
+Compare to the spatial median splitting, finding a split plane to construct a SAH-based kd-tree is significantly more complex, since determine the spatial median for a given voxel is trivial, it costs \( O(1) \). For the SAH-based kd-tree however, as we have to find the best split plane that yields the minimum cost among the candidates, and for each of the candidates we have to compute the SAH cost by calculating the surface area of the voxels and number of objects \mynumtrileft and \mynumtriright. The brute-force to compute the \mynumtrileft and \mynumtriright is performing the intersection test between the primitive and bounding box, which is unacceptably inefficient. As the best split is determined, all the primitives referenced in the current node have to be classified into two lists, therefore the primitives are tested against the bounding box one more time. The \mynaive finding plane algorithm is shown as \ref{algo:NaiveFindSplit}. 
+
+As the algorithm shows, classifying the \(N\) triangles into two list costs \mycomplexityn, as for each potential split planes the \mynumtrileft and \mynumtriright are both have to be computed, the complexity finding the best split plane in terms of the SAH cost in each partitioning will be \mycomplexitysqrtn. During recursion, the complexity of the partitioning can be expressed as the following recurrence equation which can be solved using recursion-tree: 
+
+\begin{equation}
+    \begin{split}
+        T(N) &= 2T(N/2) + N^{2} &= \sum_{i=1}^{\log{N}}2^{i}(N/2^{i})^{2} &= N^{2}\sum_{i=1}^{\log{N}}2^{-i} \in \mycomplexitysqrtn
+    \end{split}
+\end{equation}
+
+\SetAlFnt{\small}
+\begin{algorithm}[H]
+
+    \SetKwFunction{SplitBox}                    {SplitBox}
+    \SetKwFunction{FindSplitNaive}              {FindSplitNaive}
+    \SetKwFunction{SplitCandidates}             {SplitCandidates}
+    \SetKwFunction{ClassifyTriangles}           {ClassifyTriangles}
+    \SetKwFunction{SAHCost}                     {SAHCost}
+    \SetKwFunction{SAH}                         {SAH}
+    
+    \myfunc \SplitCandidates{\mytriangle,\myvoxel} \Return \{\mysplitplanea,\mysplitplaneb,\(\ldots\)\} \newline
+    \Begin{
+        \myaabb = clip \mytriangle\ to current voxel \;
+        \Return \(\cup_{\mydimension = 1,2,3}\){\myaabbmink \(\cup\) \myaabbmaxk} \;
+    }
+    \myalgblankline
+   
+    \myfunc \ClassifyTriangles{\mytriangles,\myleftchildbox,\myrightchildbox,\mysplitplane} \Return (\mylefttrilist,\myrighttrilist) \newline
+    \Begin {
+        \mylefttrilistbest = \myrighttrilistbest = \myemptyset\;     
+        \ForAll {\mytriangle\ \(\in\) \mytriangles} 
+        {
+            \If{\mytriangle\ intersects with \myleftchildbox}{
+                Add \mytriangle\ to triangles list \mylefttrilistbest\;
+            }
+            \If{\mytriangle\ intersects with \myrightchildbox}{
+                Add \mytriangle\ to triangles list \myrighttrilistbest\;
+            }
+        }
+    }
+    \myalgblankline
+
+    \myfunc \SAHCost{\mysapleft,\mysapright,\mynumtrileft,\mynumtriright} \Return \mysahcost \newline
+    \Begin {
+        \Return \mysahlambda(\mykt + \myki(\mysapleft \mynumtrileft + \mysapright \mynumtriright))\;
+    }
+    \myalgblankline
+    
+    \myfunc \SAH{\mysplitplane,\myvoxel,\mynumtrileft,\mynumtriright} \Return \newline 
+    \Begin {
+        (\myleftchildbox,\myrightchildbox) = \SplitBox{\myvoxel,\mysplitplane}\;
+        \mysapleft = SA(\myleftchildbox) / SA(\myvoxel)\;
+        \mysapright = SA(\myrightchildbox) / SA(\myvoxel)\;
+        
+        \Return \SAHCost{\mysapleft,\mysapright,\mynumtrileft,\mynumtriright}\; 
+    } 
+    \myalgblankline
+   
+    \myfunc \FindSplitNaive{\mytriangles,\myvoxel} \Return (\mysplitplane,\mylefttrilistbest,\myrighttrilistbest) \newline
+    \Begin {
+        \ForAll {\mytriangle\ \(\in\) \mytriangles} {
+        (\mycostmin,\mysplitplane) = (\myinfty,\myemptyset)\;
+        \mysplitplanescan\ = \SplitCandidates{\mytriangle,\myvoxel}\;
+
+            \ForAll {\mysplitplane\ \(\in\) \mysplitplanescan} {
+                (\myleftchildbox,\myrightchildbox) = split \myvoxel\ with \mysplitplane\;
+                (\mylefttrilist,\myrighttrilist) = \ClassifyTriangles{\mytriangles,\myleftchildbox,\myrightchildbox,\mysplitplane}\;  
+                \mycostp\ = \SAH{\mysplitplane,\myvoxel,\mynumtrilist{\mylefttrilist},\mynumtrilist{\myrighttrilist}}\;
+                \If {\mycostp\ \(<\) \mycostmin} {
+                    (\mycostmin,\mysplitplane) = (\mycostp,\mysplitplane)\;
+                }
+            }
+        (\mylefttrilistbest,\myrighttrilistbest) = \ClassifyTriangles{\mytrilist,\myleftchildbox,\myrightchildbox,\mysplitplane}\;
+    }
+    }
+    \caption{The \mynaive algorithm of finding the best SAH split plane}
+    \label{algo:NaiveFindSplit} 
+\end{algorithm}
+
+\subsection{ Building kd-tree in \mycomplexitynlogn }
+It is easy to observe that the unacceptable complexity \complexitysqrtn of the \naive algorithm is mainly due to the inefficient computing of \mynumtrileft and \mynumtriright, as for each split plane, it failed to compute number of the triangles on the left and right take advantage of the increment of the split plane position, it is easy to know that the number of the triangles only changes only at split candidates, as the split plane ``sweeping'' over the candidates to find the best split, the \mynumtrileft and \mynumtriright can be updated using a incremental scheme. Consider a split plane \mysplitplane in an axis \mydimension and its position is denoted as \mysplitplanepos, there is a certain number of triangles lying on the left, right side of it, which is also can be called as the number of end, starting planes respectively. Let us denote the number of starting triangles for the split plane \mysplitplane as \mynumtristartp, the number of end triangles \mynumtriendp.
+
+\paragraph{}
+Let us consider \(n\) split planes candidates \{\mysplitplanen{0},\mysplitplanen{1},\mysplitplanesn{2} \ldots\ \mysplitplanen{n}\}, along one fixed axis \mydimension, and assume that all the planes are sorted in ascending order. For the first split plane candidate \mysplitplane{0} which has the minimum coordinates value, there will be no triangle on the left, all the triangles are lying on the right side of it. 
+
+\begin{displaymath} 
+    N_{L}^{(0)} = 0 \qquad N_{R}{(0)} = N
+\end{displaymath} 
+
+As the split plane ``sweeping'' from split plane \mysplitplanen{i-1} to \mysplitplanen{i}, the \mynumtrileft and \mynumtriright will change as follows: 
+\begin{enumerate} 
+    \item The triangles started at \mysplitplanen{i-1} will intersect with left voxel \myleftchildbox. 
+    \item The triangles ended at \mysplitplanen{i} will no long intersect with right voxel \myrightchildbox 
+\end{enumerate}
+
+Therefore the \mynumtrileft and \mynumtriright can be updated incrementally using the following equations: 
+\begin{equation}
+    \label{eq:SweepUpdate}
+    N_{L}^{(i)} = N_{L}^{(i-1)} + \mynumtristartp
+    N_{R}^{(i)} = N_{R}^{(i-1)} - \mynumtriendp 
+\end{equation}
+
+Follow this updating rule, all the \mynumtrileft and \mynumtriright of all the split planes candidates can be computed incrementally by iterating over the all the possible split position \mysplitplanen{i}. Firstly, we need to fix a dimension \mydimensiona, for this \mydimension, we go through all the triangles \mytriangle and generate the split candidates associated with \mytriangle, for each candidate, an ``event'' will be generated and stored. The ``event'', \myevent = (\myeventt, \myeventp, \myeventk, \myeventtype), is actually defined as a data structure which contains four data fields: a reference to the triangle whose bounding box's face defines the split candidate, the coordinate value of split position and the event type. The reference to \mytriangle can be simply an index of it, denoted as \myeventt, the plane position is a float-point value, denoted as \myeventp, the dimension \mydimension, and event type, \myeventtype, is an enumeration of several flags to indicate the relation between the triangle referenced in this event and the split plane this event corresponds to, start event and end event. According to the definition, a start event always corresponds to a split position at minimum face of the triangle's bounding box, while end event will be generated by a split plane at the position of the maximum face. Three lists of events against all axises will be generated by iterating over all the triangles, and will be eventually merged into one list \myeventlist\ in an interleaved fashion respect to the dimension, this obviously requires the event structure to have an tag to indicate which axis the event corresponds to. Secondly, each of the list of consecutive events for the same axis needs to be sorted, and the comparison of two events \(e_{a}\) and \(e_{b}\) is shown as equation \ref{eq:EventCompare}. For those events with different positions, they will be sorted by ascending the coordinate values, for those events with same positions, they will be sorted by comparing the event type, that is, the end event will precede the start event. Suppose there are two adjacent triangles which share one vertex, only one split plane candidate will be generated at the vertex, while there will be two events to be stored, one end event references the triangle that is ``before'' the plane, and one start event references the triangle that is ``beyond'' the plane. So by counting the start and end events, the \mynumtrilef and \mynumtriright can be easily determined regarding a certain plane.   
+
+% TODO: Add a graph here for the example above
+
+% Event Comparison
+\begin{equation} 
+    e_{a} < e_{b} = \left\{ 
+        \begin{array}{ll}
+            true & (a_{p,k} < b_{p,k}) \vee ( (a_{p,k} = b_{p,k}) \wedge (a_{type} < b_{type}) ) \\
+            false & otherwise
+        \end{array} \right.
+        \label{eq:EventCompare}   
+\end{equation} 
+
+To compute the \mynumtrileft and \mynumtriright for each split plane candidates \mysplitplanen{i} using the sorted event list to find the best one, we consider all dimensions in one loop, for each dimension, a separate \mynumtrileftk{k}, \mynumtrirightk{k}\ needs to be stored. For each dimension, we perform the ``sweeping'' using the above incremental updating scheme. We firstly consider the sequence of the \mysplitplanen{i}-related events, count the end and start events to determine the number of start and end triangles \mynumtristartip{i} and \mynumtriendip{i}. Then the \mynumtrileft and \mynumtriright for the split planes can be maintained and updated by applying the update equations. Once the \mynumtrileft, \mynumtriright are determined, the SAH cost is readily to compute and we can find the best split plane by choosing the one with minimum cost. The algorithm is shown as follows: 
+
+\SetAlFnt{\small}
+\begin{algorithm}[H]
+    
+    \SetKwData{vari}{i}
+    \SetKwFunction{FindBestPlane}               {FindBestPlane}
+    \SetKwFunction{SplitCandidates}             {SplitCandidates}
+    \SetKwFunction{SAHCost}                     {SAHCost}
+    \SetKwFunction{SAH}                         {SAH}
+    \SetKwFunction{SplitBox}                    {SplitBox}
+    
+    \textbf{pre:} E has been sorted.   
+    \myfunc \FindBestPlane{\myeventlistk{x,y,z}, \myvoxel, \mynumtri} \Return \mybestsplitplane\\
+    \Begin {
+        (\mycostmin,\mysplitplane) = (\myinfty,\myemptyset)\; 
+        \ForAll {\mydimension\ in \{x, y, z\}} {
+            \{start: all triangles are right side only for each k\}\\ 
+            \mynumtrileftk{k} = 0, \mynumtrirightk{k} = \mynumtri\;  
+            \For {$i \leftarrow 0$ \KwTo \mynumeventlist} {
+                % get the plane in current k
+                \mysplitplane = (\myeventlistpi{$i$}, \myeventlistki{$i$})\;
+                \mynumtristartp = \mynumtriendp = 0\;
+                \{iterate over all plane candidates.\}\\
+                \While{$i$ \(<\) \mynumeventlist\ \(\wedge\) \mysplitplanek = \myeventlistki{$i$} \(\wedge\) \mysplitplanep = \myeventlistppi{$i$} \(\wedge\) \myeventlistti{$i$} = \myeventtypeend} { 
+                    inc \mynumtriendp\;
+                    inc $i$;
+                }
+                
+                \While{$i$ \(<\) \mynumeventlist\ \(\wedge\) \mysplitplanek = \myeventlistki{$i$} \(\wedge\) \mysplitplanep = \myeventlistppi{$i$} \(\wedge\) \myeventlistti{$i$} = \myeventtypestart} {
+                    inc \mynumtristartp\;
+                    inc $i$\;
+                }
+                \mynumtrirightk{k} -= \mynumtriendp\; 
+                \mycostp = \SAH{\mysplitplane,\myvoxel,\mynumtrileftk{k},\mynumtrirightk{k}}\;
+                \If {\mycostp\ \(<\) \mycostmin} {
+                    (\mycostmin,\mysplitplane) = (\mycostp,\mysplitplane)\;
+                } 
+                \mynumtrileftk{k} += \mynumtristartp\;     
+            }
+        }  
+        \Return \mycostmin\; 
+    } 
+    \caption{The \mycomplexityn\ algorithm of finding the best SAH split plane}
+    \label{algo:FindBestPlaneON} 
+\end{algorithm}
+
+\paragraph{} 
+After finding the best split plane \mybestsplitplane, classifying the triangle list into two sub-lists is another important step in one recursion step. Since the best split in current recursion is found using a sorted events list, we have to find a way to compute two sub-lists of events \myeventlistleft and \myeventlistright, and more importantly, to maintain the ascending order of them so that they can become inputs for the following recursion step without performing any sorting. As the input event list \myeventlist is sorted, and the best split plane \mybestsplitplane\ has been found, if an event is of end type and its position is less than the \mybestsplitplane, the triangle this event references must be in the left sub-list of triangle \mylefttrilist, symmetrically, the triangle referenced in a start event with a greater position than the \mybestsplitplane must belongs to the \myrighttrilist. The remaining triangles should be counted in both \mylefttrilist and \myrighttrilist. The triangle classification algorithm is shown as following: 
+
+
+\SetAlFnt{\small}
+\begin{algorithm}[H]
+    \SetKwFunction{ClassifyTriangles}           {ClassifyTriangles}
+    \myfunc \ClassifyTriangles{\mytrilist,\myeventlist,\mybestsplitplane} 
+        \Return \mylefttrilist,\myrighttrilist,\myeventlistleft,\myeventlistright\\ 
+    \Begin {
+        \ForAll{\myevent\ \myopin\ \myeventlist} {
+            \If {\myeventtype=\myeventtypestart\  
+                    \myopand\ \myeventk=\mybestsplitplanek\  
+                    \myopand\ \myeventp\myopless\mybestsplitplanep} {
+                 
+                    set \mytriflagsarray{\myeventt}.\mytriflagleft\;
+                  
+                } 
+           \If {\myeventtype=\myeventtypeend\ 
+                    \myopand\ \myeventk=\mybestsplitplanek\ 
+                    \myopand\ \myeventp\myopgreater\mybestsplitplanep} {
+                    
+                     set \mytriflagsarray{\myeventt}.\mytriflagright\;
+                 }
+        } % End of ForAll event
+        \ForAll {\mytriangle\ \myopin\ \mytrilist} {
+            \If {\mytriflagsarray{\mytriangle}.\mytriflagleft is set} {
+                \mylefttrilist\ appends \mytriangle\; 
+            }
+            \If {\mytriflagsarray{\mytriangle}.\mytriflagright is set} {
+                \myrighttrilist\ appends \mytriangle\; 
+            }
+        } % End of \ForAll triangles
+        
+        \ForAll {\mydimension\ \myopin\ \{x, y, z\}} {
+            \ForAll {\myevent\ \myopin\ \myeventlistk{\mydimension}} {
+                \If {\mytriflagsarray{\myeventt}.\mytriflagleft} {
+                    \myeventlistleftk{\mydimension} appends \myevent\;
+                } 
+                \If {\mytriflagsarray{\myeventt}.\mytriflagright} {
+                    \myeventlistrightk{\mydimension} appends \myevent\;
+                } 
+            }
+        } % End of \ForAll k
+    } % End of Begin
+    
+    \caption{The triangle classification algorithm in \mycomplexityn.}
+    \label{algo:ClassifyTriangles} 
+\end{algorithm}

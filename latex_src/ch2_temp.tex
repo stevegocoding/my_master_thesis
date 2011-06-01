@@ -1,0 +1,54 @@
+\begin{comment}
+\SetAlFnt{\small}
+\begin{algorithm}[H]
+	\SetKwData{RootNode}{rootNode} \SetKwData{RootBox}{rootBox}
+	\SetKwData{CurrentDepth}{currentDepth} 
+	\SetKwData{CurrentNode}{currentNode} \SetKwData{CurrentBox}{currentBox}
+	\SetKwData{LeftChildNode}{leftChildNode} \SetKwData{RightChildNode}{rightChildNode}
+	\SetKwData{LeftChildBox}{leftdBox} \SetKwData{RightChildBox}{rightBox}
+	\SetKwData{SplitPlane}{splitPlane}
+
+	\SetKwFunction{Subdivide}{Subdivide}
+	\SetKwFunction{KDTreeBuild}{KDTreeBuild}
+	\SetKwFunction{FindSplitPlane}{FindSplitPlane}
+	\SetKwFunction{SplitBox}{SplitBox}
+	\SetKwFunction{SplitTriangles}{SplitTriangles}
+	\SetKwFunction{Terminate}{Terminate}
+
+	\myfunc \Subdivide{$currentNode$, $currentBox$, $currentDepth$} \newline
+	\Begin {
+		\If{\Terminate{$currentNode$, $currentBox$} } {
+			make $currentNode$ a leaf node 
+			\Return
+		}
+		\Else
+		{
+			$leftdBox \longleftarrow currentBox$ \;
+			$rightBox \longleftarrow currentBox$ \;
+			$splitPlane \longleftarrow \FindSplitPlane{$currentNode$, $currentBox$} $ \; 
+			$(leftdBox, rightBox) \longleftarrow \SplitBox{$currentBox$, $splitPlane$} $\;        
+			\ForAll{objects referenced $currentNode$}
+			{
+				\If{object is within children's box}{add object to children's object list}
+			}
+
+			\Subdivide{$leftChildNode$, $leftBox$, $currentDepth+1 $} \;
+			\Subdivide{$rightChildNode$, $rightBox$, $currentDepth+1$} \;
+		}
+
+	}
+	\BlankLine
+	\BlankLine
+	\myfunc \KDTreeBuild{} \newline
+	\Begin {
+		Create $rootNode$ \;
+		Create $rootBox$ \;
+		Attach all the primitives to the $rootNode$ \;
+		\Subdivide{$rootNode, rootBox, 0$} \;
+	}
+
+	\caption{Recursive kd-tree construction}
+	\label{algo:kd-tree_construction} 
+\end{algorithm}
+\end{comment}
+

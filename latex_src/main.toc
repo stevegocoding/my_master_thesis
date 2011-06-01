@@ -1,0 +1,32 @@
+\contentsline {chapter}{List of Figures}{vi}
+\contentsline {chapter}{List of Tables}{vii}
+\contentsline {chapter}{\numberline {1}Introduction}{1}
+\contentsline {paragraph}{}{1}
+\contentsline {paragraph}{}{1}
+\contentsline {paragraph}{}{2}
+\contentsline {paragraph}{}{2}
+\contentsline {paragraph}{}{2}
+\contentsline {chapter}{\numberline {2}Background}{4}
+\contentsline {section}{\numberline {2.1}Ray Tracing Algorithm Overview}{4}
+\contentsline {section}{\numberline {2.2}Acceleration Structures}{8}
+\contentsline {subsection}{\numberline {2.2.1}Grid}{9}
+\contentsline {subsection}{\numberline {2.2.2}Bounding Volume Hierarchy}{9}
+\contentsline {subsubsection}{BVH Construction}{9}
+\contentsline {subsubsection}{BVH Traversal}{11}
+\contentsline {subsection}{\numberline {2.2.3}KD-Tree}{12}
+\contentsline {subsubsection}{KD-Tree Data Representation}{14}
+\contentsline {subsubsection}{KD-Tree Construction}{15}
+\contentsline {subsubsection}{KD-Tree Traversal}{16}
+\contentsline {chapter}{\numberline {3}Efficient KD-Tree For Ray-Tracing}{21}
+\contentsline {section}{\numberline {3.1}KD-Tree Construction Algorithm}{21}
+\contentsline {subsection}{\numberline {3.1.1}Surface Area Heuristic}{21}
+\contentsline {subsection}{\numberline {3.1.2}KD-Tree Construction With SAH}{22}
+\contentsline {subsubsection}{Fast KD-tree Construction in \relax $O(N\qopname \relax o{log}{N})\relax \GenericError { }{LaTeX Error: Bad math environment delimiter}{See the LaTeX manual or LaTeX Companion for explanation.}{Your command was ignored.\MessageBreak Type I <command> <return> to replace it with another command,\MessageBreak or <return> to continue without it.}}{24}
+\contentsline {subsection}{\numberline {3.1.3}Optimizations of KD-tree Construction on CPU}{28}
+\contentsline {subsubsection}{Parallelization}{28}
+\contentsline {paragraph}{FindBestPlane}{29}
+\contentsline {paragraph}{ClassifyTriangles}{29}
+\contentsline {paragraph}{FilterGeometry}{29}
+\contentsline {subsubsection}{Memory Management}{29}
+\contentsline {chapter}{\numberline {4}Implementation and Results}{30}
+\contentsline {chapter}{\numberline {5}Conclusion}{31}
