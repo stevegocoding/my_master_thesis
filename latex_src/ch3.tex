@@ -26,22 +26,22 @@ In \cite{havran2000}, Vlastimil Havran introduced ``surface area heuristic'' (SA
 The SAH cost model provides an estimation of the computational expense of performing ray intersection tests, including the time spent traversing nodes of the tree and the time spent on ray-primitive intersection test for a subdivision of primitives. The goal for the kd-tree construction algorithm to follow is to minimize the total cost, particularly for a greedy algorithm like algorithm \ref{algo:kd-tree_construction}, the goal is to minimize the cost for each subdivision step.
 
 For each subdivision step, we have to decide whether to make the current region a leaf node with all of the overlapping primitives attached or refine the region to create two subregions. In the first case, any ray that passes through this region will be tested against all of the primitives leading to a cost of 
-	$\displaystyle\sum\limits_{i=1}^N C_{isect}(i)$
+        $\displaystyle\sum\limits_{i=1}^N C_{isect}(i)$
 
 Where N is the number of primitives and \(C_{isect}(i)\) is the cost of computing the intersection between the ray and the \(i\)th primitive. 
 
 For the other case which is to split the region, the cost can be modeled with the following equation:
 
 \begin{equation} 
-	\label{eq:CostOneStep}
-	C(A, B) = C_{trav} + p_{A} \cdot \sum\limits_{i=1}^{N_{A}} C_{isect}(a_{i}) + p_{B} \cdot \sum\limits_{i=1}^{N_{B}} C_{isect}(b_{i})
+        \label{eq:CostOneStep}
+        C(A, B) = C_{trav} + p_{A} \cdot \sum\limits_{i=1}^{N_{A}} C_{isect}(a_{i}) + p_{B} \cdot \sum\limits_{i=1}^{N_{B}} C_{isect}(b_{i})
 \end{equation}
 
 Where the \(C_{trav}\) is the cost of traversing the interior node, \(p_{A}\) and \(p_{B}\) are the probabilities of the ray passing through each of the child nodes. \(a_{i}\) and \(b_{i}\) are the primitives attached on the two children nodes, and \(N_{A}\) and \(N_{B}\) are the number of the primitives overlapping with of the subregions respectively. 
 
 The probabilities \(p_{A}\) and \(p_{B}\) can be computed using the ideas from geometric probability. A convex volume A contained in another convex volume B, the conditional probability that a random ray passing through B will also pass through A is the ratio of their surface areas, \(s_{a}\) and \(s_{b}\): 
 \begin{equation} 
-	p(A|B) = \frac{s_{A}}{s_{B}} 
+        p(A|B) = \frac{s_{A}}{s_{B}} 
 \end{equation}
 
 \subsection{KD-Tree Construction With SAH} 
@@ -67,68 +67,69 @@ The ``FindSplitPlaneSAH'' function takes the list of triangles \(T\), the voxel 
 
 \SetAlFnt{\small}
 \begin{algorithm}[H]
-	\SetKwData{true}{\(true\)}
-	\SetKwData{false}{\(false\)}
+        \SetAlgooLined
+        \SetKwData{true}{\(true\)}
+        \SetKwData{false}{\(false\)}
 
-	\SetKwData{tri}{\(t\)}
-	\SetKwData{triangleList}{\(T\)}
-	\SetKwData{triangleListLeft}{\(T_{L}\)}	
-	\SetKwData{triangleListRight}{\(T_{R}\)}
-	\SetKwData{triangleListLeftNum}{\(\lvert\)\triangleListLeft\(\rvert\)}
-	\SetKwData{triangleListRightNum}{\(\lvert\)\triangleListRight\(\rvert\)}
+        \SetKwData{tri}{\(t\)}
+        \SetKwData{triangleList}{\(T\)}
+        \SetKwData{triangleListLeft}{\(T_{L}\)} 
+        \SetKwData{triangleListRight}{\(T_{R}\)}
+        \SetKwData{triangleListLeftNum}{\(\lvert\)\triangleListLeft\(\rvert\)}
+        \SetKwData{triangleListRightNum}{\(\lvert\)\triangleListRight\(\rvert\)}
 
-	\SetKwData{voxel}{\(V\)}
-	\SetKwData{voxelLeft}{\(V_{L}\)}
-	\SetKwData{voxelRight}{\(V_{R}\)}
-	\SetKwData{currentNode}{\(node\)}
-	\SetKwData{currentBox}{\(box\)} 
-	
-	\SetKwData{splitPlane}{\(p\)}
-	\SetKwData{splitPlaneBest}{\(p_{best}\)}
-	\SetKwData{splitPlaneCan}{ \{ \(p_0, p_1, \dots\) \} }
-	\SetKwData{splitPlaneList}{\(P\)}
-	
-	\SetKwData{axis}{\(k\)}
-	
-	\SetKwData{cost}{\(C\)}
-	\SetKwData{costMin}{\(C_{min}\)}
+        \SetKwData{voxel}{\(V\)}
+        \SetKwData{voxelLeft}{\(V_{L}\)}
+        \SetKwData{voxelRight}{\(V_{R}\)}
+        \SetKwData{currentNode}{\(node\)}
+        \SetKwData{currentBox}{\(box\)} 
+        
+        \SetKwData{splitPlane}{\(p\)}
+        \SetKwData{splitPlaneBest}{\(p_{best}\)}
+        \SetKwData{splitPlaneCan}{ \{ \(p_0, p_1, \dots\) \} }
+        \SetKwData{splitPlaneList}{\(P\)}
+        
+        \SetKwData{axis}{\(k\)}
+        
+        \SetKwData{cost}{\(C\)}
+        \SetKwData{costMin}{\(C_{min}\)}
 
-	\SetKwFunction{CalcBounds}{\ProcNameSty{CalcBounds}}
-	\SetKwFunction{CalcBoundEdge}{\ProcNameSty{CalcBoundEdge}}
-	\SetKwFunction{FindSplitPlaneSAH}{\ProcNameSty{FindSplitPlaneSAH}}
-	\SetKwFunction{CalcSplitCandidates}{\ProcNameSty{CalcSplitCandidates}}
-	\SetKwFunction{ClassifyTriangles}{\ProcNameSty{ClassifyTriangles}}
-	\SetKwFunction{SAHCost}{\ProcNameSty{SAHCost}}
-	\SetKwFunction{Terminate}{\ProcNameSty{Terminate}}
-	
-	\myfunc \ClassifyTriangles{\triangleList, \voxelLeft, \voxelRight, \splitPlane} \Return (\triangleListLeft, \triangleListRight) \newline 
-	\Begin {
-		\triangleListLeft = \triangleListRight = \(\phi\)\;		
-		\ForAll {\tri \(\in\) \triangleList} {
-			\If {\tri overlaps with \voxelLeft} {append \tri to \triangleListLeft\;}
-			\If {\tri overlaps with \voxelRight} {append \tri to \triangleListRight\;}
-		}
-	}
-	
-	\myalgblankline
-	
-	\myfunc \FindSplitPlaneSAH{\triangleList, \voxel, \axis} \Return \splitPlaneBest \newline
-	\Begin {
-		\ForAll{\tri \(\in\) \triangleList} {
-			\splitPlane = \CalcBoundEdge{\CalcBounds{\tri}, \axis}\;
-			Append \splitPlane to split plane list \splitPlaneList\; 
-		}
-		\ForAll{\splitPlane \(\in\) \splitPlaneList} {
-			(\voxelLeft, \voxelRight) = split \voxel with \splitPlane\; 
-			(\triangleListLeft, \triangleListRight) = \ClassifyTriangles{\triangleList, \voxelLeft, \voxelRight, \splitPlane}\;
-			\cost = \SAHCost{V, \splitPlane, \triangleListLeftNum, \triangleListRightNum}\;
-			\If {\cost < \costMin} {
-				(\costMin, \splitPlaneBest) = (\cost, \splitPlane)\;
-			}
-		}
-	}
-	\caption{Find the optimal split plane based on SAH}
-	\label{algo:kd-tree_construction_sah}
+        \SetKwFunction{CalcBounds}{\ProcNameSty{CalcBounds}}
+        \SetKwFunction{CalcBoundEdge}{\ProcNameSty{CalcBoundEdge}}
+        \SetKwFunction{FindSplitPlaneSAH}{\ProcNameSty{FindSplitPlaneSAH}}
+        \SetKwFunction{CalcSplitCandidates}{\ProcNameSty{CalcSplitCandidates}}
+        \SetKwFunction{ClassifyTriangles}{\ProcNameSty{ClassifyTriangles}}
+        \SetKwFunction{SAHCost}{\ProcNameSty{SAHCost}}
+        \SetKwFunction{Terminate}{\ProcNameSty{Terminate}}
+        
+        \myfunc \ClassifyTriangles{\triangleList, \voxelLeft, \voxelRight, \splitPlane} \Return (\triangleListLeft, \triangleListRight) \newline 
+        \Begin {
+                \triangleListLeft = \triangleListRight = \(\phi\)\;             
+                \ForAll {\tri \(\in\) \triangleList} {
+                        \If {\tri overlaps with \voxelLeft} {append \tri to \triangleListLeft\;}
+                        \If {\tri overlaps with \voxelRight} {append \tri to \triangleListRight\;}
+                }
+        }
+        
+        \myalgblankline
+        
+        \myfunc \FindSplitPlaneSAH{\triangleList, \voxel, \axis} \Return \splitPlaneBest \newline
+        \Begin {
+                \ForAll{\tri \(\in\) \triangleList} {
+                        \splitPlane = \CalcBoundEdge{\CalcBounds{\tri}, \axis}\;
+                        Append \splitPlane to split plane list \splitPlaneList\; 
+                }
+                \ForAll{\splitPlane \(\in\) \splitPlaneList} {
+                        (\voxelLeft, \voxelRight) = split \voxel with \splitPlane\; 
+                        (\triangleListLeft, \triangleListRight) = \ClassifyTriangles{\triangleList, \voxelLeft, \voxelRight, \splitPlane}\;
+                        \cost = \SAHCost{V, \splitPlane, \triangleListLeftNum, \triangleListRightNum}\;
+                        \If {\cost < \costMin} {
+                                (\costMin, \splitPlaneBest) = (\cost, \splitPlane)\;
+                        }
+                }
+        }
+        \caption{Find the optimal split plane based on SAH}
+        \label{algo:kd-tree_construction_sah}
 \end{algorithm}
 
 \subsubsection{Fast KD-tree Construction in \mycomplexitynlogn} 
@@ -148,8 +149,8 @@ As the split plane ``sweeping'' from split plane \mysplitplanen{i-1} to \mysplit
 
 Therefore the \mynumtrileft and \mynumtriright can be updated incrementally using the following equations: 
 \begin{equation}
-	N_{L}^{i} = N_{L}^{i-1} + p^{+}
-	N_{R}^{i} = N_{R}^{i-1} - p^{-}
+        N_{L}^{i} = N_{L}^{i-1} + p^{+}
+        N_{R}^{i} = N_{R}^{i-1} - p^{-}
     \label{eq:SweepUpdate}
 \end{equation}
 

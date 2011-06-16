@@ -33,8 +33,8 @@ Figure \ref{fig:fixed_function_pipeline} shows an example of fixed-function rend
 % Describe the data type
 The modern graphics pipeline is usually designed to take the vertex as the input of data and the vertices are going to be assembled in the pipeline to represent the certain types of geometric primitives (such as triangles) that are going be rendered eventually. The vertices data will be converted into a form that the hardware understands and placed into the vertex cache.  
 
-% Describe the major stages in the pipeline
-The major stages in the pipeline will be described in the following text. The first important stage in the pipeline is Transform and Lighting (T\&L). This stage takes the attributes of the vertices, such as the positions, normals, colors and texture coordinates) as input, applies the transformations on each vertices and performs the per-vertex shading calculations according to the light source properties and certain vertex properties. All the output of this stage are per-vertex values.
+escribe the major stages in the pipeline
+The major stages in the pipeline will be described in the following text. The first important stage in the pipeline is Transform and Lighting (T\&L). This stage takes the attributes of the vertices, such as the positions, normals, colors and texture coordinates) as input, applies the transformations on each vertices and performs the per-vertex shading  according to the light source properties and certain vertex properties. All the output of this stage are per-vertex values.
 
 And the triangle setup stage further creates edge equations that are used to interpolate colors and other per-vertex data across the pixels touched by the triangle in the rendered image. After this stage, it is ready to determine the which pixels are contained in each triangle, this is done by the rasterization stage, at this point, the geometric polygons in the 3D space will be converted to the filled pixels in 2D space, and for each of these pixels, the rasterization process will interpolate per-vertex values neccessary for shading the pixels, including the color, position and texture coordinates that will be shaded (painted) on the pixel.
 
@@ -42,9 +42,9 @@ The next important stage is the shading. As the name implies, the final color of
 
 Following the rasterization stage, the raster operation stage, also known as pixel engines, performs the final raster operation on each pixel. It performs color raster operations that blend the color of overlapping/adjacent objects for transparency and anti-aliasing effects. It also determines the visible objects for a viewpoint and discards the occluded pixels. A pixel becomes occluded when it is blocked by pixels from other objects according to the given new point. 
 
-Finally, the frame buffer interface is responsible for managing the memory reads from and writes to the display frame buffer memory.   
+Finally, the frame buffer interface is responsible for managing the memory reads from and writes to the display frame buffer memory.
 
-For a couple of decades, each generation of hardware and its corresponding generation of API brought incremental improvements to the various stages of the graphics pipeline, however, developers are always asking for more new features than the build-in function can provide. Therefore, an obvious evolution for the graphics pipeline is the programmable graphics pipeline.   
+For a couple of decades, each generation of hardware and its corresponding generation of API brought incremental improvements to the various stages of the graphics pipeline, however, developers are always asking for more new features than the build-in function can provide. Therefore, an obvious evolution for the graphics pipeline is the programmable graphics pipeline.
 
 \paragraph{Programmable Graphics Pipeline}
 Programmable graphics pipeline takes a further step by making certain stages into programmable processors. In graphics pipeline, certain stages do a great deal of floating-point arithmetic on completely independent data, in theses stages certain functions will be applied to each element in a set of data (a stream), such as the transformation on the set of vertices positions and pixels shading calculations on the pixel stream. This data independence is one of the key difference between the design assumption for GPU and CPU, this provides a tremendous opportunity to exploit the data parallelism. 
@@ -106,13 +106,28 @@ The opportunities always come along with challenges. The specialized architectur
 \subsection{GPGPU Programming Concepts}
 
 \subsubsection{Kernels}
-Due to the restriction of the programmable shaders graphics pipeline, programmers can be only able to create vertex, geometry and fragment programs that only works on the very limited type of the elemments of the data stream (vertices and fragments). With the generalized type of the elements of the stream data, a generalized version of the programs running on the GPU called \emph{Kernels} is introduced as well. Similar to the programmable shaders, kernels are the functions that are applied to each element in the stream independently performing general computing task.
+Due to the restriction of the programmable shaders graphics pipeline, programmers can be only able to create vertex, geometry and fragment programs that only works on the very limited type of the elemments of the data stream (vertices and fragments). With the generalized type of the elements of the stream data, a generalized version of the programs running on the GPU called \emph{Kernels} is introduced as well. Similar to the programmable shaders, kernels are the functions that are applied to each element in the stream independently performing general computing task. The execution of each kernel will be mapped to an array of threads. 
+
+\subsubsection{Execution Model}
+The threads implemented by the GPGPU are extremely lightweight and have very little creation and context switching overhead compares to the threads on CPU. Moreover, the threads are organized into a hierarchical structure which is known as the grid of threads. The grid is formed by a number of thread blocks, each block again can be divided into one-dimensional or two-dimensional grid of threads. The thread can be identified using one-dimensional, two-dimensional or three-dimensional thread index and the block can be identified as the block index. The organization of the threads can be illustrasted by the figure ~\ref{fig:grid_of_thread_blocks}. 
+
+\begin{figure}[htp] 
+    \centering 
+    \fbox{\includegraphics{figGridOfThreadBlocks.pdf}} 
+    \renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+    \caption[GPGPU Thread Hierarchy]{\emph{}}
+    \label{fig:grid_of_thread_blocks} 
+\end{figure}
 
 \subsubsection{Memory Model}
 
 
 
-\subsubsection{Thread Hierarchy}
+
+
+
+
+
 
 
 \section{KD-Tree Construction Using GPU}
@@ -189,9 +204,7 @@ In this section, the GPU-based SAH kd-tree building algorithm will be presented.
 
 \SetAlFnt{\small}
 \begin{algorithm}[H]
-    
     \SetKwFunction{processLargeNodes}       {processLargeNodes}
-    
     \myfunc \processLargeNodes{ { {\bf in} workNodesList, {\bf out} smallNodesList, {\bf out} nextNodesList} 
     \Begin {
         \tcp{first step: group triangles into chunks}
@@ -225,7 +238,7 @@ In this section, the GPU-based SAH kd-tree building algorithm will be presented.
                 add \mynode to nextNodesList
             }
         }
-        
+
         \tcp{forth step: classify the triangles into child nodes}
         \ForEach{triangles chunk \mytrichunk\ in trianglesChunkList \bf in parallel}
         {
@@ -238,7 +251,7 @@ In this section, the GPU-based SAH kd-tree building algorithm will be presented.
                     \myrighttrilist\ \leftarrow \mytriangle
                 }
                 Classify \mylefttrilist\ and \myrighttrilist\ into two child nodes.
-                
+
                 \Else {
                     Classify \mytriangle into the child node contains it    
                 }
@@ -251,7 +264,7 @@ In this section, the GPU-based SAH kd-tree building algorithm will be presented.
             \mynode \leftarrow the index of the node the chunk \mytrichunk belongs to
             Count triangles in the child nodes of \mynode.
         }
-        
+
         \tcp{small node filtering}
         \ForEach{child nodes \mynode\ in nextNodesList \bf in parallel}
         {

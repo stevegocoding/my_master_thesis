@@ -1,17 +1,1 @@
 \addvspace {10\p@ }
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Ray Casting}}{6}
-\contentsline {subfigure}{\numberline {(a)}{\ignorespaces {}}}{6}
-\contentsline {subfigure}{\numberline {(b)}{\ignorespaces {}}}{6}
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Recursive Ray Tracing}}{7}
-\contentsline {figure}{\numberline {2.4}{\ignorespaces Bounding Volume Hierarchy for a Scene\relax }}{10}
-\contentsline {figure}{\numberline {2.5}{\ignorespaces Linear Layout of a BVH in memory}}{11}
-\contentsline {figure}{\numberline {2.6}{\ignorespaces 2D view of the subdivision of a scene}}{13}
-\contentsline {figure}{\numberline {2.7}{\ignorespaces KD-Tree representation of a simple scene}}{14}
-\contentsline {figure}{\numberline {2.8}{\ignorespaces KD-tree traversal proceed only one child node}}{18}
-\contentsline {figure}{\numberline {2.9}{\ignorespaces KD-tree traversal proceed both children nodes}}{18}
-\contentsline {figure}{\numberline {2.10}{\ignorespaces Traversal of Ray Through the KD-Tree.}}{19}
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Spatial median split and SAH-based split}}{23}
-\addvspace {10\p@ }
-\addvspace {10\p@ }
